@@ -1,0 +1,66 @@
+name: DotnetBuild
+
+on:
+ # push:
+ #   branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: [self-hosted]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        java-version: ${{ inputs.JAVA_VERSION }}
+        distribution: 'temurin'
+          
+
+   
+    #--------------------------------------------------------------------------
+    # Fetching Version from POM.xml file inside the module code for application
+    #--------------------------------------------------------------------------
+
+    - run: echo -e "\e[34m[Get pom.xml version]"
+      shell: bash
+    - name: Get pom.xml version
+      id: get-pom-version
+      shell: bash
+      working-directory: "${{ inputs.APP_MODULE }}"
+      run: |
+        chmod +x mvnw
+        version=`./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout -s .mvn/settings.xml`
+        value=`echo "$version" | awk -F" " '{print $2}' | awk '{print $2}'`
+        echo $value
+        echo "::set-output name=pom-version::$value"
+
+    #----------------------
+    # Code Packaging -> JAR
+    #----------------------
+
+    - name: Package Java application
+      run: |
+        echo -e "\e[34m[Package Java application]"
+        cd ${{ inputs.APP_MODULE}}
+        chmod +x mvnw
+        ./mvnw -B package -s .mvn/settings.xml
+        cd ${{ inputs.APP_SUBMODULE}}
+        mv ./target/*.jar ./target/${{ inputs.ARTIFACT_NAME}}.jar
+      shell: bash
+
+    #-----------------------------------------------------------------
+    # Archiving the JAR Package using upload-artifact@v1 Github Action
+    #-----------------------------------------------------------------
+
+    - run: echo -e "\e[34m[Store the JAR file]"
+      shell: bash     
+    - name: Java package artifact upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ inputs.ARTIFACT_NAME }}.jar
+        path: ./${{ inputs.APP_MODULE }}/${{ inputs.APP_SUBMODULE }}/target/${{ inputs.ARTIFACT_NAME }}.jar   
+   
