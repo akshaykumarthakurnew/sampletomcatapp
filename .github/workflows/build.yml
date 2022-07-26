@@ -1,15 +1,15 @@
-name: DotnetBuild
+name: SpringTomcatbuild
 
 on:
- # push:
- #   branches: [ "main" ]
+  push:
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build:
 
-    runs-on: [agent1]
+    runs-on: [agent2]
 
     steps:
     - uses: actions/checkout@v3
