@@ -9,14 +9,14 @@ on:
 jobs:
   build:
 
-    runs-on: [self-hosted]
+    runs-on: [agent1]
 
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3.4.1
       with:
-        java-version: ${{ inputs.JAVA_VERSION }}
+        java-version: '17'
         distribution: 'temurin'
           
 
@@ -30,10 +30,8 @@ jobs:
     - name: Get pom.xml version
       id: get-pom-version
       shell: bash
-      working-directory: "${{ inputs.APP_MODULE }}"
       run: |
-        chmod +x mvnw
-        version=`./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout -s .mvn/settings.xml`
+        version=`./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout`
         value=`echo "$version" | awk -F" " '{print $2}' | awk '{print $2}'`
         echo $value
         echo "::set-output name=pom-version::$value"
@@ -45,11 +43,7 @@ jobs:
     - name: Package Java application
       run: |
         echo -e "\e[34m[Package Java application]"
-        cd ${{ inputs.APP_MODULE}}
-        chmod +x mvnw
-        ./mvnw -B package -s .mvn/settings.xml
-        cd ${{ inputs.APP_SUBMODULE}}
-        mv ./target/*.jar ./target/${{ inputs.ARTIFACT_NAME}}.jar
+        ./mvnw -B package
       shell: bash
 
     #-----------------------------------------------------------------
@@ -59,8 +53,8 @@ jobs:
     - run: echo -e "\e[34m[Store the JAR file]"
       shell: bash     
     - name: Java package artifact upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.0
       with:
-        name: ${{ inputs.ARTIFACT_NAME }}.jar
-        path: ./${{ inputs.APP_MODULE }}/${{ inputs.APP_SUBMODULE }}/target/${{ inputs.ARTIFACT_NAME }}.jar   
+        name: petclinic.war
+        path: ./target/petclinic.war
    
