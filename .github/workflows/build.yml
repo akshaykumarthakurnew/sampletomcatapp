@@ -31,6 +31,7 @@ jobs:
       id: get-pom-version
       shell: bash
       run: |
+        chmod +x mvnw
         version=`./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout`
         value=`echo "$version" | awk -F" " '{print $2}' | awk '{print $2}'`
         echo $value
@@ -43,6 +44,7 @@ jobs:
     - name: Package Java application
       run: |
         echo -e "\e[34m[Package Java application]"
+        chmod +x mvnw
         ./mvnw -B package
       shell: bash
 
