@@ -1,0 +1,1 @@
+java -jar target\spring-batch-0.2.jar  --exportVets

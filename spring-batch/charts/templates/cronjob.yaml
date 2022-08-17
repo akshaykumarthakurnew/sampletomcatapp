@@ -1,0 +1,68 @@
+{{- range .Values.jobs }}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ $.Chart.Name }}-{{ lower .id }}
+spec:
+  schedule: {{ quote .schedule }}
+  concurrencyPolicy: {{ .concurrencyPolicy | default "Forbid" }}
+  suspend: {{ .suspend | default false }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            reference-batch-job: {{ .id | lower }}
+            is-cron: "true"
+        spec:
+          imagePullSecrets: 
+                 - name: {{ $.Values.imagePullSecrets }}     
+          volumes:
+        {{- if $.Values.config.enableKeyVault }}          
+            - name: secrets-mount
+              csi:
+                driver: secrets-store.csi.k8s.io
+                readOnly: true
+                volumeAttributes:
+                  secretProviderClass: azure-keyvault-{{ $.Chart.Name }}
+            - name: azurefile
+              persistentVolumeClaim:
+                claimName: {{ $.Values.config.storage.PersistentVolumeClaim }}     
+        {{- end }} 
+            - name: config-file
+              configMap:
+                name: configmap-backend                         
+          containers:
+          - name: {{ $.Chart.Name }}-{{ lower .id }}
+            image: {{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}
+            imagePullPolicy: IfNotPresent
+            args: {{ .args }}              
+            env:
+              {{- range $.Values.env }}
+              - name: {{ .name }}
+                value: {{ .value }}
+              {{- end }}
+              - name: JAVA_TOOL_OPTIONS
+                value: "-Dbatch={{ .batchproperty }}"
+              - name: SPRING_PROFILES_ACTIVE
+                value: "{{ $.Values.environment }}"
+              {{- if $.Values.config.enableKeyVault }}
+              - name: SPRING_DATASOURCE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: reference-secret
+                    key: {{ $.Values.config.key }} 
+              {{- end }}                        
+            volumeMounts:
+            {{- if $.Values.config.enableKeyVault }}             
+              - mountPath: "/secrets"
+                name: secrets-mount 
+              - mountPath: "/export"
+                name: azurefile
+            {{- end }}
+              - mountPath: /workspace/BOOT-INF/classes/application.properties
+                name: config-file
+                subPath: application.properties                    
+          # do not restart
+          restartPolicy: Never
+{{- end }}

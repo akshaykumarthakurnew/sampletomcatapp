@@ -1,0 +1,14 @@
+{{- if $.Values.config.enableKeyVault }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name:  {{ $.Values.config.storage.PersistentVolumeClaim }} 
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: azurefile
+  volumeName:  {{ $.Values.config.storage.PersistentVolume }} 
+{{- end }}

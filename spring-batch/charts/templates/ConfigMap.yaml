@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configmap-backend
+  namespace: {{ .Values.namespace }}
+data:   
+  application.properties: |  
+      spring.batch.initialize-schema={{ .Values.properties.spring_batch_initialize_schema }}
+      spring.batch.job.enabled={{ .Values.properties.spring_batch_job_enabled }}
+      spring.flyway.baselineOnMigrate = {{ .Values.properties.spring_flyway_baselineOnMigrate }}
+      spring.flyway.enabled={{ .Values.properties.spring_flyway_enabled }}
+      batch.job.export.file.header={{ .Values.properties.batch_job_export_file_header }}
+      batch.job.export.file.path={{ .Values.properties.batch_job_export_file_path }}
+      azure.application-insights.instrumentation-key={{ .Values.properties.azure_application_insights_instrumentationkey }}                
